@@ -1,0 +1,28 @@
+{
+  "name": "brella-transition",
+  "version": "1.0.0",
+  "description": "Generates the brella transition for OBS Studio.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "ts-node src/index.ts"
+  },
+  "author": "NorthWestWind",
+  "license": "GPL-3.0-or-later",
+  "devDependencies": {
+    "@types/command-exists": "^1.2.0",
+    "@types/fluent-ffmpeg": "^2.1.21",
+    "@types/node": "^20.4.2",
+    "@types/tinycolor2": "^1.4.3",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.1.6"
+  },
+  "dependencies": {
+    "canvas": "^2.11.2",
+    "command-exists": "^1.2.9",
+    "cwebp": "^2.0.5",
+    "fluent-ffmpeg": "^2.1.2",
+    "tinycolor2": "^1.6.0"
+  }
+}
