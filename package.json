@@ -3,6 +3,13 @@
   "version": "1.0.0",
   "description": "Generates the brella transition for OBS Studio.",
   "main": "dist/index.js",
+  "bin": {
+    "brella-transition": "dist/index.js"
+  },
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*"
+  ],
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
@@ -21,8 +28,24 @@
   "dependencies": {
     "canvas": "^2.11.2",
     "command-exists": "^1.2.9",
+    "commander": "^11.0.0",
     "cwebp": "^2.0.5",
     "fluent-ffmpeg": "^2.1.2",
     "tinycolor2": "^1.6.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/North-West-Wind/brella-transition.git"
+  },
+  "keywords": [
+    "obs",
+    "obs-studio",
+    "transition",
+    "generator",
+    "brella"
+  ],
+  "bugs": {
+    "url": "https://github.com/North-West-Wind/brella-transition/issues"
+  },
+  "homepage": "https://github.com/North-West-Wind/brella-transition#readme"
 }

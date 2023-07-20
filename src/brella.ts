@@ -1,7 +1,9 @@
 import { CanvasRenderingContext2D } from "canvas";
 import { Vec2 } from "./math";
 import tinycolor from "tinycolor2";
-import { ATTACK, HOLD, RED } from "./constant";
+import { attack, hold } from ".";
+
+const RED = "#dc2329";
 
 export class Brella {
 	position: Vec2;
@@ -29,9 +31,9 @@ export class Brella {
 		ctx.rotate(this.angle);
 		// Draw canopy
 		ctx.fillStyle = this.color.toHexString();
-		if (this.frames < ATTACK) this.makePath(ctx, this.frames);
-		else if (this.frames < ATTACK + HOLD) this.makePath(ctx, ATTACK);
-		else this.makePath(ctx, ATTACK * 2 + HOLD - this.frames - 1);
+		if (this.frames < attack) this.makePath(ctx, this.frames);
+		else if (this.frames < attack + hold) this.makePath(ctx, attack);
+		else this.makePath(ctx, attack * 2 + hold - this.frames - 1);
 		ctx.fill();
 		// Draw ribs
 		ctx.strokeStyle = this.color.clone().darken(5).toHexString();
@@ -43,18 +45,18 @@ export class Brella {
 		this.drawCap(ctx);
 		ctx.resetTransform();
 		this.frames++;
-		if (this.frames >= ATTACK * 2 + HOLD) this.ended = true;
+		if (this.frames >= attack * 2 + hold) this.ended = true;
 		this.angle += 0.01;
 	}
 
 	private scale() {
-		if (this.frames < ATTACK) return Math.sin(Math.PI * this.frames / (ATTACK * 2));
-		else if (this.frames < ATTACK + HOLD) return Math.sin(Math.PI * ATTACK / (ATTACK * 2));
-		else return Math.sin(Math.PI * (ATTACK * 2 + HOLD - this.frames - 1) / (ATTACK * 2));
+		if (this.frames < attack) return Math.sin(Math.PI * this.frames / (attack * 2));
+		else if (this.frames < attack + hold) return Math.sin(Math.PI * attack / (attack * 2));
+		else return Math.sin(Math.PI * (attack * 2 + hold - this.frames - 1) / (attack * 2));
 	}
 
 	private makePath(ctx: CanvasRenderingContext2D, x: number) {
-		const coefficient = 0.1 / (ATTACK * ATTACK * 1.2);
+		const coefficient = 0.1 / (attack * attack * 1.2);
 		ctx.beginPath();
 		let vec = new Vec2(0, this.size * 0.5 * this.scale());
 		ctx.moveTo(vec.x, vec.y);
