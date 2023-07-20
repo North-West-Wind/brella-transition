@@ -8,8 +8,8 @@ import { execute, randomBetween } from "./util";
 import { program } from "commander";
 
 program
-	.option("-w, --width <number>", "width of the canvas", "1920")
-	.option("-h, --height <number>", "height of the canvas", "1080")
+	.option("-W, --width <number>", "width of the canvas", "1920")
+	.option("-H, --height <number>", "height of the canvas", "1080")
 	.option("--brella <number>", "maximum amount of brella", "30")
 	.option("--retries <number>", "maximum retries before choosing to overlap, -1 to allow indefinite retries", "1000000")
 	.option("--fps <number>", "framerate of the transition", "60")
