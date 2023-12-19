@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 import { Canvas } from "canvas";
-import commandExists from "command-exists";
 import * as fs from "fs";
 import { Vec2 } from "./math";
 import { Brella } from "./brella";
-import { execute, randomBetween } from "./util";
+import { randomBetween } from "./util";
 import { program } from "commander";
+import { run } from "ffmpeg-helper";
 
 program
 	.option("-W, --width <number>", "width of the canvas", "1920")
@@ -22,7 +22,6 @@ export const attack = parseInt(options.attack);
 export const hold = parseInt(options.hold);
 const ribs = options.ribs.split(",").map((x: string) => parseInt(x));
 
-if (!fs.existsSync("tmp")) fs.mkdirSync("tmp");
 if (!fs.existsSync("out")) fs.mkdirSync("out");
 
 const canvas = new Canvas(parseInt(options.width), parseInt(options.height), "image");
@@ -57,12 +56,11 @@ while (!brellas.length || !brellas.every(brella => brella.ended)) {
 	fs.writeFileSync(`out/frame-${name}.png`, canvas.toBuffer());
 }
 
-if (commandExists.sync("ffmpeg"))
-	execute("ffmpeg", ["-framerate", options.fps.toString(), "-f", "image2", "-i", "out/frame-%04d.png", "-lossless", "1", "-c:v", "libvpx-vp9", "-pix_fmt", "yuva420p", "out/brella.webm"])
-		.then(() => {
-			// Clean up
-			for (const file of fs.readdirSync("out")) {
-				if (!file.endsWith(".png")) continue;
-				fs.rmSync(`out/${file}`);
-			}
-		});
+run(["-framerate", options.fps.toString(), "-f", "image2", "-i", "out/frame-%04d.png", "-lossless", "1", "-c:v", "libvpx-vp9", "-pix_fmt", "yuva420p", "out/brella.webm"].join(" "))
+	.then(() => {
+		// Clean up
+		for (const file of fs.readdirSync("out")) {
+			if (!file.endsWith(".png")) continue;
+			fs.rmSync(`out/${file}`);
+		}
+	});
