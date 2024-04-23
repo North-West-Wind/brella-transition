@@ -19,15 +19,19 @@ Run `brella-transition` in the terminal.
 You can also use additional options:
 ```
 Options:
-  -W, --width <number>   width of the canvas (default: "1920")
-  -H, --height <number>  height of the canvas (default: "1080")
-  --brella <number>      maximum amount of brella (default: "30")
-  --retries <number>     maximum retries before choosing to overlap, -1 to allow indefinite retries (default: "1000000")
-  --fps <number>         framerate of the transition (default: "60")
-  --attack <number>      frames of brella opening/closing (default: "15")
-  --hold <number>        frames of brella staying opened (default: "30")
-  --ribs <numbers>       possible number of ribs, separated by commas (default: "6,8")
-  -h, --help             display help for command
+  -W, --width <number>        width of the canvas (default: "1920")
+  -H, --height <number>       height of the canvas (default: "1080")
+  -o, --output <string>       name of output file (default: "brella.webm")
+  --brella <number>           maximum amount of brella (default: "30")
+  --retries <number>          maximum retries before choosing to overlap, -1 to allow indefinite retries (default: "1000000")
+  --fps <number>              framerate of the transition (default: "60")
+  --attack <number>           frames of brella opening/closing (default: "15")
+  --hold <number>             frames of brella staying opened (default: "30")
+  --ribs <numbers>            possible number of ribs, separated by commas (default: "6,8")
+  -h, --hue <numbers>         HUE angle range in degrees, separated by comma (default: "0,360")
+  -s, --saturation <numbers>  saturation range in percentage, separated by comma (default: "80,100")
+  -l, --lightness <numbers>   lightness range in percentage, separated by comma (default: "50,50")
+  --help                      display help for command
 ```
 
 Once generated, copy/move the WebM file to somewhere you can save permanently.

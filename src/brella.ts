@@ -15,13 +15,14 @@ export class Brella {
 	private frames = 0;
 	ended = false;
 
-	constructor(position: Vec2, size: number, sides: number, color?: string) {
+	constructor(position: Vec2, size: number, sides: number, hueRange: number[], saturationRange: number[], lightnessRange: number[]) {
 		this.position = position;
 		this.size = size;
 		this.sides = sides;
 		this.centerAngle = Math.PI * 2 / sides;
-		if (color) this.color = tinycolor(color);
-		else this.color = tinycolor(RED).spin(Math.floor(Math.random() * 360));
+		/*if (color) this.color = tinycolor(color);
+		else this.color = tinycolor(RED).spin(Math.floor(Math.random() * 360));*/
+		this.color = tinycolor(`hsl(${hueRange[0] + (hueRange[1] ? Math.floor(Math.random() * (hueRange[1] - hueRange[0])) : 0)} ${saturationRange[0] + (saturationRange[1] ? Math.floor(Math.random() * (saturationRange[1] - saturationRange[0])) : 0)}% ${lightnessRange[0] + (lightnessRange[1] ? Math.floor(Math.random() * (lightnessRange[1] - lightnessRange[0])) : 0)}%)`);
 		this.angle = Math.random() * Math.PI * 2;
 	}
 

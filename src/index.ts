@@ -3,26 +3,61 @@ import { Canvas } from "canvas";
 import * as fs from "fs";
 import { Vec2 } from "./math";
 import { Brella } from "./brella";
-import { randomBetween } from "./util";
+import { nanoid, randomBetween } from "./util";
 import { program } from "commander";
 import { run } from "ffmpeg-helper";
+import sanitize from "sanitize-filename";
+import { exit } from "process";
 
 program
 	.option("-W, --width <number>", "width of the canvas", "1920")
 	.option("-H, --height <number>", "height of the canvas", "1080")
+	.option("-o, --output <string>", "name of output file", "brella.webm")
 	.option("--brella <number>", "maximum amount of brella", "30")
 	.option("--retries <number>", "maximum retries before choosing to overlap, -1 to allow indefinite retries", "1000000")
 	.option("--fps <number>", "framerate of the transition", "60")
 	.option("--attack <number>", "frames of brella opening/closing", "15")
 	.option("--hold <number>", "frames of brella staying opened", "30")
-	.option("--ribs <numbers>", "possible number of ribs, separated by commas", "6,8");
+	.option("--ribs <numbers>", "possible number of ribs, separated by commas", "6,8")
+	.option("-h, --hue <numbers>", "HUE angle range in degrees, separated by comma", "0,360")
+	.option("-s, --saturation <numbers>", "saturation range in percentage, separated by comma", "80,100")
+	.option("-l, --lightness <numbers>", "lightness range in percentage, separated by comma", "50,50");
 
 const options = program.parse().opts();
 export const attack = parseInt(options.attack);
 export const hold = parseInt(options.hold);
-const ribs = options.ribs.split(",").map((x: string) => parseInt(x));
+const ribs: number[] = options.ribs.split(",").map((x: string) => parseInt(x));
+if (ribs.some(x => isNaN(x) || x < 3)) {
+	console.log("Ribs must be numbers >= 3");
+	exit(1);
+}
+let hue: number[] = options.hue.split(",").map((x: string) => parseInt(x));
+if (!hue.length || hue.some(x => isNaN(x))) {
+	console.log("HUE angle range must be numbers");
+	exit(1);
+}
+hue = hue.map(x => x == 360 || x == -360 ? x : (x < 0 ? (x % 360) + 360 : x % 360)).sort();
+let saturation: number[] = options.saturation.split(",").map((x: string) => parseInt(x));
+if (!saturation.length || saturation.some(x => isNaN(x))) {
+	console.log("Saturation range must be numbers");
+	exit(1);
+}
+saturation = saturation.map(x => x < 0 ? 0 : (x > 100 ? 100 : x)).sort();
+let lightness: number[] = options.lightness.split(",").map((x: string) => parseInt(x));
+if (!lightness.length || lightness.some(x => isNaN(x))) {
+	console.log("Lightness range must be numbers");
+	exit(1);
+}
+lightness = lightness.map(x => x < 0 ? 0 : (x > 100 ? 100 : x)).sort();
+const outName = sanitize(options.output);
+if (outName != options.output) {
+	console.log("Output file name is not valid");
+	exit(1);
+}
 
-if (!fs.existsSync("out")) fs.mkdirSync("out");
+let tmpDir = "tmp-" + nanoid();
+while (fs.existsSync(tmpDir)) tmpDir = "tmp-" + nanoid();
+fs.mkdirSync(tmpDir);
 
 const canvas = new Canvas(parseInt(options.width), parseInt(options.height), "image");
 const ctx = canvas.getContext("2d");
@@ -43,7 +78,7 @@ while (!brellas.length || !brellas.every(brella => brella.ended)) {
 			do {
 				pos = new Vec2(canvas.width * Math.random(), canvas.height * Math.random());
 			} while (brellas.some(brella => brella.position.addVec(pos.inverse()).magnitudeSqr() < Math.pow(brella.size * 0.47, 2)) && retries--);
-			brellas.push(new Brella(pos, randomBetween(canvas.height * 0.4, canvas.height * 0.6), ribs[Math.floor(Math.random() * ribs.length)]));
+			brellas.push(new Brella(pos, randomBetween(canvas.height * 0.4, canvas.height * 0.6), ribs[Math.floor(Math.random() * ribs.length)], hue, saturation, lightness));
 		}
 	}
 	// Clear the canvas
@@ -53,14 +88,19 @@ while (!brellas.length || !brellas.every(brella => brella.ended)) {
 		brella.render(ctx);
 	// Write each frame to a PNG file
 	const name = (counter++).toString().padStart(4, "0");
-	fs.writeFileSync(`out/frame-${name}.png`, canvas.toBuffer());
+	fs.writeFileSync(`${tmpDir}/frame-${name}.png`, canvas.toBuffer());
 }
 
-run(["-framerate", options.fps.toString(), "-f", "image2", "-i", "out/frame-%04d.png", "-lossless", "1", "-c:v", "libvpx-vp9", "-pix_fmt", "yuva420p", "out/brella.webm"].join(" "))
+let realOutName = outName;
+const outNameArr = outName.split(".");
+while (fs.existsSync(realOutName)) {
+	outNameArr[outNameArr.length - 1] = nanoid();
+	realOutName = outNameArr.join(".") + ".webm";
+}
+if (realOutName != outName) console.log(`${outName} already exists. Will instead output to ${realOutName}`);
+
+run(["-framerate", options.fps.toString(), "-f", "image2", "-i", `${tmpDir}/frame-%04d.png`, "-lossless", "1", "-c:v", "libvpx-vp9", "-pix_fmt", "yuva420p", realOutName].join(" "))
 	.then(() => {
 		// Clean up
-		for (const file of fs.readdirSync("out")) {
-			if (!file.endsWith(".png")) continue;
-			fs.rmSync(`out/${file}`);
-		}
+		fs.rmSync(tmpDir, { recursive: true });
 	});
