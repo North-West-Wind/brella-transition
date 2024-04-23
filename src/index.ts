@@ -8,6 +8,8 @@ import { program } from "commander";
 import { run } from "ffmpeg-helper";
 import sanitize from "sanitize-filename";
 import { exit } from "process";
+import commandExists from "command-exists";
+import { exec } from "child_process";
 
 program
 	.option("-W, --width <number>", "width of the canvas", "1920")
@@ -99,8 +101,18 @@ while (fs.existsSync(realOutName)) {
 }
 if (realOutName != outName) console.log(`${outName} already exists. Will instead output to ${realOutName}`);
 
-run(["-framerate", options.fps.toString(), "-f", "image2", "-i", `${tmpDir}/frame-%04d.png`, "-lossless", "1", "-c:v", "libvpx-vp9", "-pix_fmt", "yuva420p", realOutName].join(" "))
-	.then(() => {
-		// Clean up
-		fs.rmSync(tmpDir, { recursive: true });
+const command = ["ffmpeg", "-framerate", options.fps.toString(), "-f", "image2", "-i", `${tmpDir}/frame-%04d.png`, "-lossless", "1", "-c:v", "libvpx-vp9", "-pix_fmt", "yuva420p", realOutName].join(" ");
+if (commandExists.sync("ffmpeg")) {
+	exec(command, (err, _stdout, stderr) => {
+		if (err) {
+			console.error("Error executing ffmpeg command");
+			console.error("stderr:", stderr);
+		} else {
+			// Clean up
+			fs.rmSync(tmpDir, { recursive: true });
+		}
 	});
+} else {
+	console.log("ffmpeg is not found! Install it and run this command in this directory to create your file:");
+	console.log(command);
+}
