@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import { Canvas } from "canvas";
 import * as fs from "fs";
 import { program } from "commander";
 import sanitize from "sanitize-filename";
@@ -11,6 +10,7 @@ import BrellaTransition from "./index.js";
 import * as util from "./util.js";
 import import_ from "@brillout/import";
 import { Converter as ConverterType } from "ffmpeg-stream";
+import { Canvas } from "skia-canvas";
 const { nanoid } = util;
 
 program
@@ -104,7 +104,6 @@ import_("ffmpeg-stream").then(async ({ Converter }: { Converter: typeof Converte
 		r: fps,
 		f: "image2pipe"
 	});
-	converterInput.on("error", console.error);
 
 	let realOutName = outName;
 	const outNameArr = outName.split(".");
@@ -121,7 +120,7 @@ import_("ffmpeg-stream").then(async ({ Converter }: { Converter: typeof Converte
 	});
 	const converting = converter.run();
 
-	const canvas = new Canvas(parseInt(options.width), parseInt(options.height), "image");
+	const canvas = new Canvas(parseInt(options.width), parseInt(options.height));
 	const ctx = canvas.getContext("2d") as unknown as CanvasRenderingContext2D;
 
 	const transition = new BrellaTransition({
@@ -146,18 +145,20 @@ import_("ffmpeg-stream").then(async ({ Converter }: { Converter: typeof Converte
 		// Draw the frame
 		transition.render(ctx);
 		// Get the PNG stream
-		const readable = canvas.createPNGStream();
+		const png = await canvas.png;
 		// Write each frame to a PNG file
 		if (tmpDir) {
 			const name = counter.toString().padStart(4, "0");
-			const writable = fs.createWriteStream(`${tmpDir}/frame-${name}.png`);
-			readable.pipe(writable);
+			fs.writeFile(`${tmpDir}/frame-${name}.png`, png, (err) => {
+				if (err) console.error(err);
+			});
 		}
 		// Pipe frame to FFMpeg converter
-		await new Promise<void>((res) => {
-			readable
-				.on("end", res)
-				.pipe(converterInput, { end: false });
+		await new Promise<void>((res, rej) => {
+			converterInput.write(png, (err) => {
+				if (err) rej(err);
+				else res();
+			});
 		});
 		counter++;
 		process.stdout.clearLine(0);
