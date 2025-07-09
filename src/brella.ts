@@ -1,5 +1,5 @@
 import { Vec2 } from "./math";
-import tinycolor from "tinycolor2";
+import { TinierColor } from "./tinier-color";
 
 export class Brella {
 	private attack: number;
@@ -10,7 +10,7 @@ export class Brella {
 	size: number;
 	private sides: number;
 	private centerAngle: number;
-	private color: tinycolor.Instance;
+	private color: TinierColor;
 	private angle: number;
 	private frames = 0;
 	ended = false;
@@ -25,7 +25,11 @@ export class Brella {
 		this.centerAngle = Math.PI * 2 / sides;
 		/*if (color) this.color = tinycolor(color);
 		else this.color = tinycolor(RED).spin(Math.floor(Math.random() * 360));*/
-		this.color = tinycolor(`hsl(${hueRange[0] + (hueRange[1] ? Math.floor(Math.random() * (hueRange[1] - hueRange[0])) : 0)} ${saturationRange[0] + (saturationRange[1] ? Math.floor(Math.random() * (saturationRange[1] - saturationRange[0])) : 0)}% ${lightnessRange[0] + (lightnessRange[1] ? Math.floor(Math.random() * (lightnessRange[1] - lightnessRange[0])) : 0)}%)`);
+		this.color = new TinierColor({
+			h: hueRange[0] + (hueRange[1] ? Math.floor(Math.random() * (hueRange[1] - hueRange[0])) : 0),
+			s: saturationRange[0] + (saturationRange[1] ? Math.floor(Math.random() * (saturationRange[1] - saturationRange[0])) : 0),
+			l: lightnessRange[0] + (lightnessRange[1] ? Math.floor(Math.random() * (lightnessRange[1] - lightnessRange[0])) : 0)
+		});
 		this.angle = Math.random() * Math.PI * 2;
 	}
 

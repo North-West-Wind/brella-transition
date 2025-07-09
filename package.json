@@ -6,7 +6,7 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist/*.js",
-		"dist/*.d.ts"
+    "dist/*.d.ts"
   ],
   "scripts": {
     "build": "tsc"
@@ -15,11 +15,7 @@
   "license": "GPL-3.0-or-later",
   "devDependencies": {
     "@types/node": "^20.12.7",
-    "@types/tinycolor2": "^1.4.6",
     "typescript": "^5.4.5"
-  },
-  "dependencies": {
-    "tinycolor2": "^1.6.0"
   },
   "repository": {
     "type": "git",

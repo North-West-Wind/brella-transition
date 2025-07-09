@@ -2,6 +2,8 @@ import { Brella } from "./brella";
 import { Vec2 } from "./math";
 import { randomBetween } from "./util";
 
+export { TinierColor } from "./tinier-color"
+
 export type BrellaTransitionOptions = {
 	brellaMax?: number;
 	brellaRibs?: number[];
