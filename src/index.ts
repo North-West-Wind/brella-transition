@@ -1,118 +1,92 @@
-#!/usr/bin/env node
-import { Canvas } from "canvas";
-import * as fs from "fs";
-import { Vec2 } from "./math";
 import { Brella } from "./brella";
-import { nanoid, randomBetween } from "./util";
-import { program } from "commander";
-import { run } from "ffmpeg-helper";
-import sanitize from "sanitize-filename";
-import { exit } from "process";
-import commandExists from "command-exists";
-import { exec } from "child_process";
+import { Vec2 } from "./math";
+import { randomBetween } from "./util";
 
-program
-	.option("-W, --width <number>", "width of the canvas", "1920")
-	.option("-H, --height <number>", "height of the canvas", "1080")
-	.option("-o, --output <string>", "name of output file", "brella.webm")
-	.option("--brella <number>", "maximum amount of brella", "30")
-	.option("--retries <number>", "maximum retries before choosing to overlap, -1 to allow indefinite retries", "1000000")
-	.option("--fps <number>", "framerate of the transition", "60")
-	.option("--attack <number>", "frames of brella opening/closing", "15")
-	.option("--hold <number>", "frames of brella staying opened", "30")
-	.option("--ribs <numbers>", "possible number of ribs, separated by commas", "6,8")
-	.option("-h, --hue <numbers>", "HUE angle range in degrees, separated by comma", "0,360")
-	.option("-s, --saturation <numbers>", "saturation range in percentage, separated by comma", "80,100")
-	.option("-l, --lightness <numbers>", "lightness range in percentage, separated by comma", "50,50");
+export type BrellaTransitionOptions = {
+	brellaMax?: number;
+	brellaRibs?: number[];
+	brellaRetries?: number;
 
-const options = program.parse().opts();
-export const attack = parseInt(options.attack);
-export const hold = parseInt(options.hold);
-const ribs: number[] = options.ribs.split(",").map((x: string) => parseInt(x));
-if (ribs.some(x => isNaN(x) || x < 3)) {
-	console.log("Ribs must be numbers >= 3");
-	exit(1);
-}
-let hue: number[] = options.hue.split(",").map((x: string) => parseInt(x));
-if (!hue.length || hue.some(x => isNaN(x))) {
-	console.log("HUE angle range must be numbers");
-	exit(1);
-}
-hue = hue.map(x => x == 360 || x == -360 ? x : (x < 0 ? (x % 360) + 360 : x % 360)).sort();
-let saturation: number[] = options.saturation.split(",").map((x: string) => parseInt(x));
-if (!saturation.length || saturation.some(x => isNaN(x))) {
-	console.log("Saturation range must be numbers");
-	exit(1);
-}
-saturation = saturation.map(x => x < 0 ? 0 : (x > 100 ? 100 : x)).sort();
-let lightness: number[] = options.lightness.split(",").map((x: string) => parseInt(x));
-if (!lightness.length || lightness.some(x => isNaN(x))) {
-	console.log("Lightness range must be numbers");
-	exit(1);
-}
-lightness = lightness.map(x => x < 0 ? 0 : (x > 100 ? 100 : x)).sort();
-const outName = sanitize(options.output);
-if (outName != options.output) {
-	console.log("Output file name is not valid");
-	exit(1);
+	frameAttack?: number;
+	frameHold?: number;
+	frameRotate?: number;
+
+	colorHue?: [number, number];
+	colorSaturation?: [number, number];
+	colorLightness?: [number, number];
 }
 
-let tmpDir = "tmp-" + nanoid();
-while (fs.existsSync(tmpDir)) tmpDir = "tmp-" + nanoid();
-fs.mkdirSync(tmpDir);
+export default class BrellaTransition {
+	private active = false;
+	private brellas: Brella[];
 
-const canvas = new Canvas(parseInt(options.width), parseInt(options.height), "image");
-const ctx = canvas.getContext("2d");
+	private brellaMax: number;
+	private brellaRibs: number[];
+	private brellaRetries: number;
 
-const brellas: Brella[] = [];
+	private frameAttack: number;
+	private frameHold: number;
+	private frameRotate: number;
 
-var counter = 0;
-// Keep drawing if some brellas are still active
-while (!brellas.length || !brellas.every(brella => brella.ended)) {
-	// 30 is the limit
-	if (brellas.length < parseInt(options.brella)) {
-		// Spawn 2 brellas every frame
-		for (let ii = 0; ii < 2; ii++) {
-			var retries = parseInt(options.retries);
-			if (retries < 0) retries = Infinity;
-			var pos: Vec2;
-			// Keep retrying if overlapped
-			do {
-				pos = new Vec2(canvas.width * Math.random(), canvas.height * Math.random());
-			} while (brellas.some(brella => brella.position.addVec(pos.inverse()).magnitudeSqr() < Math.pow(brella.size * 0.47, 2)) && retries--);
-			brellas.push(new Brella(pos, randomBetween(canvas.height * 0.4, canvas.height * 0.6), ribs[Math.floor(Math.random() * ribs.length)], hue, saturation, lightness));
-		}
+	private colorHue: [number, number];
+	private colorSaturation: [number, number];
+	private colorLightness: [number, number];
+
+	readonly estimatedFrames: number;
+
+	constructor(options: BrellaTransitionOptions = {}) {
+		this.brellas = [];
+
+		this.brellaMax = options.brellaMax || 30;
+		this.brellaRibs = options.brellaRibs || [6, 8];
+		this.brellaRetries = options.brellaRetries || 1000000;
+
+		this.frameAttack = options.frameAttack || 15;
+		this.frameHold = options.frameHold || 30;
+		this.frameRotate = options.frameRotate || 0.01;
+
+		this.colorHue = (options.colorHue?.map(x => x == 360 || x == -360 ? x : (x < 0 ? (x % 360) + 360 : x % 360)).sort() || [0, 360]) as [number, number];
+		this.colorSaturation = (options.colorSaturation?.map(x => x < 0 ? 0 : (x > 100 ? 100 : x)).sort() || [80, 100]) as [number, number];
+		this.colorLightness = (options.colorLightness?.map(x => x < 0 ? 0 : (x > 100 ? 100 : x)).sort() || [50, 50]) as [number, number];
+
+		this.estimatedFrames = this.brellaMax * 0.5 + this.frameAttack * 2 + this.frameHold - 1;
 	}
-	// Clear the canvas
-	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	// Draw all the brellas
-	for (const brella of brellas)
-		brella.render(ctx);
-	// Write each frame to a PNG file
-	const name = (counter++).toString().padStart(4, "0");
-	fs.writeFileSync(`${tmpDir}/frame-${name}.png`, canvas.toBuffer());
-}
 
-let realOutName = outName;
-const outNameArr = outName.split(".");
-while (fs.existsSync(realOutName)) {
-	outNameArr[outNameArr.length - 1] = nanoid();
-	realOutName = outNameArr.join(".") + ".webm";
-}
-if (realOutName != outName) console.log(`${outName} already exists. Will instead output to ${realOutName}`);
-
-const command = ["ffmpeg", "-framerate", options.fps.toString(), "-f", "image2", "-i", `${tmpDir}/frame-%04d.png`, "-lossless", "1", "-c:v", "libvpx-vp9", "-pix_fmt", "yuva420p", realOutName].join(" ");
-if (commandExists.sync("ffmpeg")) {
-	exec(command, (err, _stdout, stderr) => {
-		if (err) {
-			console.error("Error executing ffmpeg command");
-			console.error("stderr:", stderr);
-		} else {
-			// Clean up
-			fs.rmSync(tmpDir, { recursive: true });
+	/**
+	 * Renders all Brellas for a frame. The frame counter is automatically incremented.
+	 * Does not clear the canvas
+	 * @param ctx Canvas rendering context of the canvas you want to render onto
+	 */
+	render(ctx: CanvasRenderingContext2D) {
+		if (!this.active) return;
+		// Keep spawning if limit is not reached
+		if (this.brellas.length < this.brellaMax) {
+			// Spawn 2 brellas every frame
+			for (let ii = 0; ii < 2; ii++) {
+				var retries = this.brellaRetries;
+				if (retries < 0) retries = Infinity;
+				var pos: Vec2;
+				// Keep retrying if overlapped
+				do {
+					pos = new Vec2(ctx.canvas.width * Math.random(), ctx.canvas.height * Math.random());
+				} while (this.brellas.some(brella => brella.position.addVec(pos.inverse()).magnitudeSqr() < Math.pow(brella.size * 0.47, 2)) && retries--);
+				this.brellas.push(new Brella(pos, randomBetween(ctx.canvas.height * 0.4, ctx.canvas.height * 0.6), this.brellaRibs[Math.floor(Math.random() * this.brellaRibs.length)], this.colorHue, this.colorSaturation, this.colorLightness, this.frameAttack, this.frameHold, this.frameRotate));
+			}
 		}
-	});
-} else {
-	console.log("ffmpeg is not found! Install it and run this command in this directory to create your file:");
-	console.log(command);
+		// Draw all the brellas
+		for (const brella of this.brellas)
+			brella.render(ctx);
+		// Check if we are done
+		if (this.brellas.length >= this.brellaMax && this.brellas.every(brella => brella.ended))
+			this.active = false;
+	}
+
+	activate() {
+		this.brellas = [];
+		this.active = true;
+	}
+
+	isActive() {
+		return this.active;
+	}
 }
