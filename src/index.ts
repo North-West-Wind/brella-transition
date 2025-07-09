@@ -43,9 +43,9 @@ export default class BrellaTransition {
 		this.brellaRibs = options.brellaRibs || [6, 8];
 		this.brellaRetries = options.brellaRetries || 1000000;
 
-		this.frameAttack = options.frameAttack || 15;
-		this.frameHold = options.frameHold || 30;
-		this.frameRotate = options.frameRotate || 0.01;
+		this.frameAttack = options.frameAttack ?? 15;
+		this.frameHold = options.frameHold ?? 30;
+		this.frameRotate = options.frameRotate ?? 0.01;
 
 		this.colorHue = (options.colorHue?.map(x => x == 360 || x == -360 ? x : (x < 0 ? (x % 360) + 360 : x % 360)).sort() || [0, 360]) as [number, number];
 		this.colorSaturation = (options.colorSaturation?.map(x => x < 0 ? 0 : (x > 100 ? 100 : x)).sort() || [80, 100]) as [number, number];
@@ -63,8 +63,11 @@ export default class BrellaTransition {
 		if (!this.active) return;
 		// Keep spawning if limit is not reached
 		if (this.brellas.length < this.brellaMax) {
+			let spawns = 2;
+			// Special case: frameAttack is 0
+			if (this.frameAttack == 0) spawns = this.brellaMax;
 			// Spawn 2 brellas every frame
-			for (let ii = 0; ii < 2; ii++) {
+			for (let ii = 0; ii < spawns; ii++) {
 				var retries = this.brellaRetries;
 				if (retries < 0) retries = Infinity;
 				var pos: Vec2;

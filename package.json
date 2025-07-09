@@ -1,6 +1,6 @@
 {
   "name": "brella-transition",
-  "version": "2.1.4",
+  "version": "2.1.6",
   "description": "Generates the brella transition for OBS Studio.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -15,7 +15,7 @@
   "license": "GPL-3.0-or-later",
   "devDependencies": {
     "@types/node": "^20.12.7",
-    "typescript": "^5.4.5"
+    "typescript": "^5.8.3"
   },
   "repository": {
     "type": "git",
