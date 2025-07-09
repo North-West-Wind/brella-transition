@@ -11,7 +11,7 @@ The coolest OBS Studio transition you will ever see. This repository contains th
 - FFmpeg
 
 ## Installing to system
-Run `npm i -g brella-transition` in the terminal.
+Run `npm i -g brella-transition-bin` in the terminal.
 
 ## Generating the animation
 Run `brella-transition` in the terminal.

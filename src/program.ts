@@ -5,13 +5,12 @@ import sanitize from "sanitize-filename";
 import { exit } from "process";
 import { tmpdir } from "os";
 import path from "path";
-import BrellaTransition from "./index.js";
+import BrellaTransition from "brella-transition";
 
-import * as util from "./util.js";
 import import_ from "@brillout/import";
 import { Converter as ConverterType } from "ffmpeg-stream";
 import { Canvas } from "skia-canvas";
-const { nanoid } = util;
+import { randomBytes } from "crypto";
 
 program
 	.option("-W, --width <number>", "width of the canvas", "1920")
@@ -108,7 +107,7 @@ import_("ffmpeg-stream").then(async ({ Converter }: { Converter: typeof Converte
 	let realOutName = outName;
 	const outNameArr = outName.split(".");
 	while (fs.existsSync(realOutName)) {
-		outNameArr[outNameArr.length - 1] = nanoid();
+		outNameArr[outNameArr.length - 1] = Array.from(randomBytes(4)).map(byte => byte.toString(16).padStart(2, "0")).join("");
 		realOutName = outNameArr.join(".") + ".webm";
 	}
 	if (realOutName != outName)

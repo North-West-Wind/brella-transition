@@ -1,35 +1,34 @@
 {
-  "name": "brella-transition",
-  "version": "2.1.1",
+  "name": "brella-transition-bin",
+  "version": "2.1.2",
   "description": "Generates the brella transition for OBS Studio.",
-  "main": "dist/index.js",
+  "main": "dist/bin/program.js",
   "bin": {
-    "brella-transition": "dist/program.js"
+    "brella-transition": "dist/bin/program.js"
   },
-  "types": "dist/index.d.ts",
+  "types": "dist/bin/program.d.ts",
   "files": [
-    "dist/**/*"
+    "dist/bin/**/*"
   ],
   "scripts": {
     "build": "tsc",
-    "start": "node dist/program.js",
+    "start": "node dist/bin/program.js",
     "test": "tsx src/program.ts"
   },
   "author": "NorthWestWind",
   "license": "GPL-3.0-or-later",
   "devDependencies": {
     "@types/node": "^20.12.7",
-    "@types/tinycolor2": "^1.4.6",
     "tsx": "^4.19.4",
     "typescript": "^5.4.5"
   },
   "dependencies": {
     "@brillout/import": "^0.2.6",
+    "brella-transition": "^2.1.2",
     "commander": "^12.0.0",
     "ffmpeg-stream": "^1.0.1",
     "sanitize-filename": "^1.6.3",
-    "skia-canvas": "^2.0.2",
-    "tinycolor2": "^1.6.0"
+    "skia-canvas": "^2.0.2"
   },
   "repository": {
     "type": "git",
